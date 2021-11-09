@@ -10,6 +10,10 @@
 #define FIELD_CELL_TYPE_HEAD snake.get_length()
 #define FIELD_CELL_TYPE_APPLE -1
 #define FIELD_CELL_TYPE_WALL -2
+#define FIELD_CELL_TYPE_SPEEDUP -3
+#define FIELD_CELL_TYPE_SPEEDDOWN -4
+int score=0;
+float score_mult=1;
 class Field {
 private:
     const int size_x = 35;
@@ -21,6 +25,9 @@ private:
     Snake snake;
     Texture texture;
     Apple apple;
+    Apple other_apple;
+    SpeedUp speedup;
+    SpeedDown speeddown;
 
     void create_walls(){
         for (int x = 0; x < size_x; x++) {
@@ -50,6 +57,10 @@ public:
             field[snake.get_x_position()][snake.get_y_position() + i] = FIELD_CELL_TYPE_HEAD - i;
         }
         field[apple.getXPosition()][apple.getYPosition()]=FIELD_CELL_TYPE_APPLE;
+        field[other_apple.getXPosition()-10][other_apple.getYPosition()+12]=FIELD_CELL_TYPE_APPLE;
+        field[speedup.getXPosition()][speedup.getYPosition()]=FIELD_CELL_TYPE_SPEEDUP;
+        field[speeddown.getXPosition()][speeddown.getYPosition()]=FIELD_CELL_TYPE_SPEEDDOWN;
+
 
 
     }
@@ -73,9 +84,7 @@ public:
         return window_height;
     }
 
-    void draw_field(sf::RenderWindow &window,bool game_over,bool pause) {
-
-
+    void draw_field(sf::RenderWindow &window,bool game_over,bool pause,int game_speed) {
         for (int x = 0; x < size_x; x++) {
             for (int y = 0; y < size_y; y++) {
                 switch (field[x][y]) {
@@ -91,43 +100,89 @@ public:
                         texture.wall.setPosition(float(x * cell_size), float(y * cell_size));
                         window.draw(texture.wall);
                         break;
+                    case FIELD_CELL_TYPE_SPEEDUP:
+                        texture.speedup.setPosition(float(x * cell_size), float(y * cell_size));
+                        window.draw(texture.speedup);
+                        break;
+                    case FIELD_CELL_TYPE_SPEEDDOWN:
+                        texture.speeddown.setPosition(float(x * cell_size), float(y * cell_size));
+                        window.draw(texture.speeddown);
+                        break;
                     default:
-                        if (field[x][y] == snake.get_length()) {
-                            float offset_x = texture.head.getLocalBounds().width / 2;
-                            float offset_y = texture.head.getLocalBounds().height / 2;
-                            texture.head.setPosition(float(x * cell_size + offset_x), float(y * cell_size + offset_y));
-                            texture.head.setOrigin(offset_x, offset_y);
-                            switch (snake.get_direction()) {
-                                case SNAKE_DIRECTION_UP:
-                                    texture.head.setRotation(0);
-                                    break;
-                                case SNAKE_DIRECTION_RIGHT:
-                                    texture.head.setRotation(90);
-                                    break;
-                                case SNAKE_DIRECTION_DOWN:
-                                    texture.head.setRotation(180);
-                                    break;
-                                case SNAKE_DIRECTION_LEFT:
-                                    texture.head.setRotation(-90);
-                                    break;
+                        if(game_speed<100){
+                            if (field[x][y] == snake.get_length()) {
+                                float offset_x = texture.superhead.getLocalBounds().width / 2;
+                                float offset_y = texture.superhead.getLocalBounds().height / 2;
+                                texture.superhead.setPosition(float(x * cell_size + offset_x),
+                                                         float(y * cell_size + offset_y));
+                                texture.superhead.setOrigin(offset_x, offset_y);
+                                switch (snake.get_direction()) {
+                                    case SNAKE_DIRECTION_UP:
+                                        texture.superhead.setRotation(0);
+                                        break;
+                                    case SNAKE_DIRECTION_RIGHT:
+                                        texture.superhead.setRotation(90);
+                                        break;
+                                    case SNAKE_DIRECTION_DOWN:
+                                        texture.superhead.setRotation(180);
+                                        break;
+                                    case SNAKE_DIRECTION_LEFT:
+                                        texture.superhead.setRotation(-90);
+                                        break;
+                                }
+                                window.draw(texture.superhead);
+                            } else {
+                                texture.superbody.setPosition(float(x * cell_size), float(y * cell_size));
+                                window.draw(texture.superbody);
                             }
-                            window.draw(texture.head);
-                        } else {
-                            texture.body.setPosition(float(x * cell_size), float(y * cell_size));
-                            window.draw(texture.body);
                         }
-
+                        else {
+                            if (field[x][y] == snake.get_length()) {
+                                float offset_x = texture.head.getLocalBounds().width / 2;
+                                float offset_y = texture.head.getLocalBounds().height / 2;
+                                texture.head.setPosition(float(x * cell_size + offset_x),
+                                                         float(y * cell_size + offset_y));
+                                texture.head.setOrigin(offset_x, offset_y);
+                                switch (snake.get_direction()) {
+                                    case SNAKE_DIRECTION_UP:
+                                        texture.head.setRotation(0);
+                                        break;
+                                    case SNAKE_DIRECTION_RIGHT:
+                                        texture.head.setRotation(90);
+                                        break;
+                                    case SNAKE_DIRECTION_DOWN:
+                                        texture.head.setRotation(180);
+                                        break;
+                                    case SNAKE_DIRECTION_LEFT:
+                                        texture.head.setRotation(-90);
+                                        break;
+                                }
+                                window.draw(texture.head);
+                            } else {
+                                texture.body.setPosition(float(x * cell_size), float(y * cell_size));
+                                window.draw(texture.body);
+                            }
+                        }
                 }
             }
         }
+        texture.panel.setPosition(float(0), float(800));
+        window.draw(texture.panel);
+        texture.score.setString("Score :" + std::to_string(score));
+        texture.score.setCharacterSize(64);
+        texture.score.setFillColor(sf::Color::Black);
+        texture.score.setPosition(float(700),float(795));
+        window.draw(texture.score);
+
         if(game_over){
-            texture.game_over.setPosition(float(480), float(0));
+            texture.game_over.setPosition(float(480), float(800));
             window.draw(texture.game_over);
         }
         if(pause){
-            texture.pause.setPosition(float(480), float(0));
+            texture.pause.setPosition(float(480), float(800));
             window.draw(texture.pause);
         }
+
     }
     void grow_snake()
     {
@@ -139,7 +194,7 @@ public:
             }
         }
     }
-    bool make_event(){ //if true - game_over
+    bool make_event(int &game_speed){ //if true - game_over
         snake.make_move(); //change head position
         if (field[snake.get_x_position()][snake.get_y_position()] != FIELD_CELL_TYPE_NONE) {
             switch (field[snake.get_x_position()][snake.get_y_position()]) {
@@ -147,12 +202,32 @@ public:
                     //sound_ate_apple.play();
                     snake.add_length();
                     grow_snake();
+                    score+=(int)(10*score_mult);
                     apple.create(field,size_x,size_y);
                     break;
                 case FIELD_CELL_TYPE_WALL:
                     //sound_died_against_the_wall.play();
                     snake.die();
                     return true;
+                    break;
+                case FIELD_CELL_TYPE_SPEEDUP:
+                    if(game_speed>=50) {
+
+                        game_speed = (int) (game_speed * 0.9);
+                        score_mult +=0.4;
+                        std::cout<<game_speed<<"\n"<<std::endl;
+                    }
+                    speedup.create(field,size_x,size_y);
+                    break;
+                case FIELD_CELL_TYPE_SPEEDDOWN:
+                    if(game_speed<=300) {
+                        if(score_mult>1) {
+                            score_mult -= 0.4;
+                        }
+                        game_speed = (int) (game_speed * 1.1);
+                        std::cout<<game_speed<<"\n"<<std::endl;
+                    }
+                    speeddown.create(field,size_x,size_y);
                     break;
                 default:
                     if (field[snake.get_x_position()][snake.get_y_position()] > 1) {
