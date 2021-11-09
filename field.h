@@ -2,10 +2,14 @@
 // Created by 1 on 08.11.2021.
 //
 #include "snake.h"
+#include "Texture.h"
+#include "buf.h"
 #ifndef SNAKE_FIELD_H
 #define SNAKE_FIELD_H
 #define FIELD_CELL_TYPE_NONE 0
 #define FIELD_CELL_TYPE_HEAD snake.get_length()
+#define FIELD_CELL_TYPE_APPLE -1
+#define FIELD_CELL_TYPE_WALL -2
 class Field {
 private:
     const int size_x = 35;
@@ -15,7 +19,24 @@ private:
     int window_height;
     int field[35][25]{};
     Snake snake;
+    Texture texture;
+    Apple apple;
+
+    void create_walls(){
+        for (int x = 0; x < size_x; x++) {
+            for (int y = 0; y < size_y; y++) {
+                if((x==0||x==34) && y!=11 && y!=12 && y!=13 ) {
+                    field[x][y] = FIELD_CELL_TYPE_WALL;
+                }
+                if((y==0||y==24) && x!=16 && x!=17 && x!=18 ){
+                    field[x][y] = FIELD_CELL_TYPE_WALL;
+                }
+            }
+        }
+    }
+
 public:
+
     Field() {
         window_width = cell_size * size_x;
         window_height = cell_size * size_y;
@@ -24,9 +45,12 @@ public:
                 field[x][y] = FIELD_CELL_TYPE_NONE;
             }
         }
+        create_walls();
         for (int i = 0; i < snake.get_length(); i++) {
             field[snake.get_x_position()][snake.get_y_position() + i] = FIELD_CELL_TYPE_HEAD - i;
         }
+        field[apple.getXPosition()][apple.getYPosition()]=FIELD_CELL_TYPE_APPLE;
+
 
     }
 
@@ -49,59 +73,95 @@ public:
         return window_height;
     }
 
-    void draw_field(sf::RenderWindow &window) {
-        sf::Texture none_texture;
-        sf::Texture body_texture;
-        sf::Texture head_texture;
-        none_texture.loadFromFile(R"(D:\CLion_2021.2.1\MyProjects\snake\cmake-build-debug\images\none.png)");
-        body_texture.loadFromFile(R"(D:\CLion_2021.2.1\MyProjects\snake\cmake-build-debug\images\snake.png)");
-        head_texture.loadFromFile(R"(D:\CLion_2021.2.1\MyProjects\snake\cmake-build-debug\images\head.png)");
-        sf::Sprite none;
-        sf::Sprite body;
-        sf::Sprite head;
-        none.setTexture(none_texture);
-        body.setTexture(body_texture);
-        head.setTexture(head_texture);
+    void draw_field(sf::RenderWindow &window,bool game_over,bool pause) {
+
 
         for (int x = 0; x < size_x; x++) {
             for (int y = 0; y < size_y; y++) {
                 switch (field[x][y]) {
                     case FIELD_CELL_TYPE_NONE:
-                        none.setPosition(float(x * cell_size), float(y * cell_size));
-                        window.draw(none);
+                        texture.none.setPosition(float(x * cell_size), float(y * cell_size));
+                        window.draw(texture.none);
+                        break;
+                    case FIELD_CELL_TYPE_APPLE:
+                        texture.apple.setPosition(float(x * cell_size), float(y * cell_size));
+                        window.draw(texture.apple);
+                        break;
+                    case FIELD_CELL_TYPE_WALL:
+                        texture.wall.setPosition(float(x * cell_size), float(y * cell_size));
+                        window.draw(texture.wall);
                         break;
                     default:
                         if (field[x][y] == snake.get_length()) {
-                            float offset_x = head.getLocalBounds().width / 2;
-                            float offset_y = head.getLocalBounds().height / 2;
-                            head.setPosition(float(x * cell_size + offset_x), float(y * cell_size + offset_y));
-                            head.setOrigin(offset_x, offset_y);
-                            switch (snake.getDirection()) {
+                            float offset_x = texture.head.getLocalBounds().width / 2;
+                            float offset_y = texture.head.getLocalBounds().height / 2;
+                            texture.head.setPosition(float(x * cell_size + offset_x), float(y * cell_size + offset_y));
+                            texture.head.setOrigin(offset_x, offset_y);
+                            switch (snake.get_direction()) {
                                 case SNAKE_DIRECTION_UP:
-                                    head.setRotation(0);
+                                    texture.head.setRotation(0);
                                     break;
                                 case SNAKE_DIRECTION_RIGHT:
-                                    head.setRotation(90);
+                                    texture.head.setRotation(90);
                                     break;
                                 case SNAKE_DIRECTION_DOWN:
-                                    head.setRotation(180);
+                                    texture.head.setRotation(180);
                                     break;
                                 case SNAKE_DIRECTION_LEFT:
-                                    head.setRotation(-90);
+                                    texture.head.setRotation(-90);
                                     break;
                             }
-                            window.draw(head);
+                            window.draw(texture.head);
                         } else {
-                            body.setPosition(float(x * cell_size), float(y * cell_size));
-                            window.draw(body);
+                            texture.body.setPosition(float(x * cell_size), float(y * cell_size));
+                            window.draw(texture.body);
                         }
 
                 }
             }
         }
+        if(game_over){
+            texture.game_over.setPosition(float(480), float(0));
+            window.draw(texture.game_over);
+        }
+        if(pause){
+            texture.pause.setPosition(float(480), float(0));
+            window.draw(texture.pause);
+        }
     }
-    void make_event(){
-        snake.make_move();
+    void grow_snake()
+    {
+        for (int x = 0; x < size_x; x++) {
+            for (int y = 0; y < size_y; y++) {
+                if (field[x][y] > FIELD_CELL_TYPE_NONE) {
+                    field[x][y]++;
+                }
+            }
+        }
+    }
+    bool make_event(){ //if true - game_over
+        snake.make_move(); //change head position
+        if (field[snake.get_x_position()][snake.get_y_position()] != FIELD_CELL_TYPE_NONE) {
+            switch (field[snake.get_x_position()][snake.get_y_position()]) {
+                case FIELD_CELL_TYPE_APPLE:
+                    //sound_ate_apple.play();
+                    snake.add_length();
+                    grow_snake();
+                    apple.create(field,size_x,size_y);
+                    break;
+                case FIELD_CELL_TYPE_WALL:
+                    //sound_died_against_the_wall.play();
+                    snake.die();
+                    return true;
+                    break;
+                default:
+                    if (field[snake.get_x_position()][snake.get_y_position()] > 1) {
+                        //sound_ate_himself.play();
+                        snake.die();
+                        return true;
+                    }
+            }
+        }
         field[snake.get_x_position()][snake.get_y_position()]=snake.get_length() +1;
         for (int x = 0; x < size_x; x++) {
             for (int y = 0; y < size_y; y++) {
@@ -110,7 +170,14 @@ public:
                 }
             }
         }
+        return false;
     };
+    void change_snake_direction(int new_direction){
+        snake.set_direction(new_direction);
+    }
+    int get_snake_direction(){
+        return snake.get_direction();
+    }
 };
 
 

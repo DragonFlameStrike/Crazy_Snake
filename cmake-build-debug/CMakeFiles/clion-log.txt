@@ -1,0 +1,5 @@
+D:\CLion_2021.2.1\bin\cmake\win\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -DCMAKE_DEPENDS_USE_COMPILER=FALSE -G "CodeBlocks - MinGW Makefiles" D:\CLion_2021.2.1\MyProjects\snake
+-- Found SFML 2.5.1 in D:/CLion_2021.2.1/MyProjects/lib/sfml/GCC 7.3.0 MinGW (SEH) - 64-bit/SFML-2.5.1/lib/cmake/SFML
+-- Configuring done
+-- Generating done
+-- Build files have been written to: D:/CLion_2021.2.1/MyProjects/snake/cmake-build-debug

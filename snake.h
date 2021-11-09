@@ -21,28 +21,30 @@ private:
 public:
 
     Snake(){
-        std::cout<<"Snake"<<std::endl;
         field_size_y=25;
         field_size_x=35;
         x_position=start_position;
         y_position=start_position;
-        length=4;
+        length=5;
         direction=SNAKE_DIRECTION_UP;
     }
-    int get_length(){
+    [[nodiscard]] int get_length() const{
         return length;
     }
-    int get_x_position(){
+    [[nodiscard]] int get_x_position() const{
         return x_position;
     }
-    int get_y_position(){
+    [[nodiscard]] int get_y_position() const{
         return y_position;
     }
-    int getDirection() const {
+    [[nodiscard]] int get_direction() const {
         return direction;
     }
-    void setDirection(int direction) {
-        Snake::direction = direction;
+    void set_direction(int new_direction) {
+        Snake::direction = new_direction;
+    }
+    void add_length(){
+        length++;
     }
     void make_move(){
         switch (direction) {
@@ -53,7 +55,6 @@ public:
                 else{
                     y_position++;
                 }
-
                 break;
             case SNAKE_DIRECTION_RIGHT:
                 if(x_position == field_size_x-1){
@@ -80,7 +81,12 @@ public:
                 }
                 break;
         }
+
     }
+    void die(){
+
+    }
+
 
 };
 
