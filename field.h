@@ -13,6 +13,10 @@
 #define FIELD_CELL_TYPE_SPEEDUP -3
 #define FIELD_CELL_TYPE_SPEEDDOWN -4
 int score=0;
+extern int game_speed;
+extern bool game_over;
+extern bool pause;
+
 float score_mult=1;
 class Field {
 private:
@@ -61,19 +65,33 @@ public:
         field[speedup.getXPosition()][speedup.getYPosition()]=FIELD_CELL_TYPE_SPEEDUP;
         field[speeddown.getXPosition()][speeddown.getYPosition()]=FIELD_CELL_TYPE_SPEEDDOWN;
 
-
-
     }
 
     ~Field() = default;
 
     void clear_field() {
+        snake.setXPosition(start_position);
+        snake.setYPosition(start_position);
+        snake.setLength(5);
+
+        snake.set_direction(SNAKE_DIRECTION_UP);
+        game_speed = 200;
         for (int x = 0; x < size_x; x++) {
             for (int y = 0; y < size_y; y++) {
 
                 field[x][y] = FIELD_CELL_TYPE_NONE;
             }
         }
+        create_walls();
+
+        for (int i = 0; i < snake.get_length(); i++) {
+            field[snake.get_x_position()][snake.get_y_position() + i] = FIELD_CELL_TYPE_HEAD - i;
+        }
+        field[apple.getXPosition()][apple.getYPosition()] = FIELD_CELL_TYPE_APPLE;
+        field[other_apple.getXPosition() - 10][other_apple.getYPosition() + 12] = FIELD_CELL_TYPE_APPLE;
+        field[speedup.getXPosition()][speedup.getYPosition()] = FIELD_CELL_TYPE_SPEEDUP;
+        field[speeddown.getXPosition()][speeddown.getYPosition()] = FIELD_CELL_TYPE_SPEEDDOWN;
+
     }
 
     int get_window_width() const {
@@ -84,7 +102,7 @@ public:
         return window_height;
     }
 
-    void draw_field(sf::RenderWindow &window,bool game_over,bool pause,int game_speed) {
+    void draw_field(sf::RenderWindow &window) {
         for (int x = 0; x < size_x; x++) {
             for (int y = 0; y < size_y; y++) {
                 switch (field[x][y]) {
@@ -194,7 +212,7 @@ public:
             }
         }
     }
-    bool make_event(int &game_speed){ //if true - game_over
+    void make_event(){ //if true - game_over
         snake.make_move(); //change head position
         if (field[snake.get_x_position()][snake.get_y_position()] != FIELD_CELL_TYPE_NONE) {
             switch (field[snake.get_x_position()][snake.get_y_position()]) {
@@ -208,7 +226,7 @@ public:
                 case FIELD_CELL_TYPE_WALL:
                     //sound_died_against_the_wall.play();
                     snake.die();
-                    return true;
+                    game_over=true;
                     break;
                 case FIELD_CELL_TYPE_SPEEDUP:
                     if(game_speed>=50) {
@@ -231,21 +249,22 @@ public:
                     break;
                 default:
                     if (field[snake.get_x_position()][snake.get_y_position()] > 1) {
-                        //sound_ate_himself.play();
                         snake.die();
-                        return true;
+                        game_over=true;
                     }
             }
         }
-        field[snake.get_x_position()][snake.get_y_position()]=snake.get_length() +1;
-        for (int x = 0; x < size_x; x++) {
-            for (int y = 0; y < size_y; y++) {
-                if(field[x][y]>FIELD_CELL_TYPE_NONE){
-                    field[x][y]--;
+        if(!game_over) {
+            field[snake.get_x_position()][snake.get_y_position()] = snake.get_length() + 1;
+            for (int x = 0; x < size_x; x++) {
+                for (int y = 0; y < size_y; y++) {
+                    if (field[x][y] > FIELD_CELL_TYPE_NONE) {
+                        field[x][y]--;
+                    }
                 }
             }
         }
-        return false;
+
     };
     void change_snake_direction(int new_direction){
         snake.set_direction(new_direction);

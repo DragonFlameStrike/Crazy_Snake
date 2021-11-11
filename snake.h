@@ -84,7 +84,19 @@ public:
 
     }
     void die(){
+//sounds
+    }
 
+    void setXPosition(int xPosition) {
+        x_position = xPosition;
+    }
+
+    void setYPosition(int yPosition) {
+        y_position = yPosition;
+    }
+
+    void setLength(int length) {
+        Snake::length = length;
     }
 
 
